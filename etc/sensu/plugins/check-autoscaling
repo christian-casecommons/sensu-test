@@ -1,2 +1,28 @@
-  echo Test CRITICAL!
-  exit 2
+#!/bin/bash
+# Checks autoscaling dates to ensure load configuration group is up to date
+
+asgname=$1
+lcname=$(
+	aws autoscaling describe-auto-scaling-groups \
+		--auto-scaling-group-name $asgname \
+		--output json \
+	| awk \
+			-F: '/LaunchConfiguration/ { print gensub(/\"(.*)\",/, "\\1", "g", $2) }' \
+	| awk '{ $1=$1; print }'
+)
+
+
+imageid=$(
+  aws autoscaling describe-launch-configurations \
+    --launch-configuration-names $lcname \
+    --output json \
+  | awk \
+      -F: '/ImageId/ { print gensub(/\"(ami-.*)\",/, "\\1", "g", $2); exit }' \
+  | awk '{ $1=$1; print }'
+)
+
+aws ec2 describe-images \
+  --image-ids $imageid \
+| awk '/CreationDate/ { print gensub(/\"([0-9].*)\",/, "\\1", "g", $2) }' \
+
+echo $asgname $lcname $imageid

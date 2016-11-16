@@ -1,7 +1,7 @@
 {
   "checks": {
     "check-autoscaling": {
-      "command": "/etc/sensu/plugins/check-autoscaling",
+      "command": "/etc/sensu/plugins/check-autoscaling asg0.test",
       "handlers": ["default"],
       "subscribers": [
         "dev"
