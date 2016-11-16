@@ -1,0 +1,12 @@
+{
+  "checks": {
+    "check-autoscaling": {
+      "command": "/etc/sensu/plugins/check-autoscaling",
+      "handlers": ["default"],
+      "subscribers": [
+        "dev"
+      ],
+      "interval": 60
+    }
+  }
+}

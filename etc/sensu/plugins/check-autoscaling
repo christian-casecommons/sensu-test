@@ -1,0 +1,2 @@
+  echo Test CRITICAL!
+  exit 2
