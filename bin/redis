@@ -1,0 +1,8 @@
+#!/bin/bash
+name=redis-0
+docker rm -f $name
+docker run \
+	--name $name \
+	--publish 6379:6379 \
+	-d -it \
+	redis:latest

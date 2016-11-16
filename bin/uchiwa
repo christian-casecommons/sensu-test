@@ -1,0 +1,8 @@
+#!/bin/bash
+docker rm -f uchiwa-0
+docker run \
+	-p 3000:3000 \
+	-it -d \
+	--name uchiwa-0 \
+	-v `pwd`/etc/uchiwa:/config \
+	uchiwa/uchiwa:latest

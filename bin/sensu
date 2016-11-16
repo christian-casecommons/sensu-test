@@ -1,0 +1,6 @@
+#!/bin/bash
+./bin/redis
+./bin/sensu-server
+./bin/sensu-client
+./bin/sensu-api
+./bin/uchiwa

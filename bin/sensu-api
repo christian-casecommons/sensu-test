@@ -1,0 +1,7 @@
+#!/bin/bash
+pkill -9 -f 'sensu-api'
+LOG_DIR=./logs \
+	/opt/sensu/bin/sensu-api \
+		-d ./etc/sensu/conf.d \
+		-l ./logs/sensu-api.log \
+		--background
