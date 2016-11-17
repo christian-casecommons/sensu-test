@@ -2,7 +2,7 @@
 # Checks autoscaling dates to ensure load configuration group is up to date
 
 asgname=$1
-logger sensu-check 
+logger "sensu-check asg=$asgname msg=start" 
 
 lcname=$(
 	aws autoscaling describe-auto-scaling-groups \
@@ -12,6 +12,7 @@ lcname=$(
 			-F: '/LaunchConfiguration/ { print gensub(/\"(.*)\",/, "\\1", "g", $2) }' \
 	| awk '{ $1=$1; print }'
 )
+logger "sensu-check asg=$asgname lc=$lcname msg=describe load configuration"
 
 
 imageid=$(
@@ -22,27 +23,41 @@ imageid=$(
       -F: '/ImageId/ { print gensub(/\"(ami-.*)\",/, "\\1", "g", $2); exit }' \
   | awk '{ $1=$1; print }'
 )
+logger "sensu-check asg=$asgname lc=$lcname image=$imageid msg=describe image"
 
 now=`date +%s`
-then=%(
-  date -d `
-    aws ec2 describe-images \
+creationdate=$(
+  aws ec2 describe-images \
       --image-ids $imageid \
     | awk '/CreationDate/ { print gensub(/\"([0-9].*)\",/, "\\1", "g", $2) }'
-  ` +%s
 )
+logger "sensu-check asg=$asgname lc=$lcname image=$imageid date=$creationdate" \
+       "msg=get image creation date"
+then=$(
+  date -d $creationdate +'%s'
+)
+difference=$(( $now - $then ))
 
 # short circuit if date failed, otherwise check if difference is greater than
 # a day
 if [[ $? != 0 ]]; then
+  logger "sensu-check asg=$asgname lc=$lcname image=$imageid date=$creationdate" \
+         "msg=date failed"
   echo "failed to determine ami date"
   exit 2
-fi
 
-elif [[ `expr $now - $then` > 86400 ]]; then
+elif [ $difference -gt 86400 ]; then
+  logger "sensu-check asg=$asgname lc=$lcname image=$imageid date=$creationdate" \
+         "difference=`expr $now - $then`" \
+         "msg=ami older than a day"
   echo "ami is older than a day"
   exit 2
+
+else
+  logger "sensu-check asg=$asgname lc=$lcname image=$imageid date=$creationdate" \
+         "difference=`expr $now - $then`" \
+         "msg=success"
+  echo OK
+  exit 0
 fi
 
-echo OK!
-exit 0
