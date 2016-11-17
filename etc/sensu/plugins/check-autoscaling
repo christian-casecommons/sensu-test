@@ -2,6 +2,8 @@
 # Checks autoscaling dates to ensure load configuration group is up to date
 
 asgname=$1
+logger sensu-check 
+
 lcname=$(
 	aws autoscaling describe-auto-scaling-groups \
 		--auto-scaling-group-name $asgname \
@@ -21,8 +23,26 @@ imageid=$(
   | awk '{ $1=$1; print }'
 )
 
-aws ec2 describe-images \
-  --image-ids $imageid \
-| awk '/CreationDate/ { print gensub(/\"([0-9].*)\",/, "\\1", "g", $2) }' \
+now=`date +%s`
+then=%(
+  date -d `
+    aws ec2 describe-images \
+      --image-ids $imageid \
+    | awk '/CreationDate/ { print gensub(/\"([0-9].*)\",/, "\\1", "g", $2) }'
+  ` +%s
+)
 
-echo $asgname $lcname $imageid
+# short circuit if date failed, otherwise check if difference is greater than
+# a day
+if [[ $? != 0 ]]; then
+  echo "failed to determine ami date"
+  exit 2
+fi
+
+elif [[ `expr $now - $then` > 86400 ]]; then
+  echo "ami is older than a day"
+  exit 2
+fi
+
+echo OK!
+exit 0
